@@ -20,6 +20,8 @@ use Symfony\Component\Routing\RequestContext;
 use Symfony\Component\Routing\Matcher\UrlMatcher;
 use Symfony\Component\Routing\Exception\ResourceNotFoundException;
 use Symfony\Component\Routing\Generator\UrlGenerator;
+use Symfony\Component\Routing\Matcher\Dumper\PhpMatcherDumper;
+use Symfony\Component\Routing\Matcher\Dumper\ApacheMatcherDumper;
 
 // create the RouteCollection - an object for configuring our routes
 $routes = new RouteCollection;
@@ -60,6 +62,13 @@ try {
     // generate URL based on Route definitions
     $generator = new UrlGenerator($routes, $context);
     $content  .= 'Url for the computers category is: <a href="' . $generator->generate('category_page', array('category_name' => 'computers')) . '">' . $generator->generate('category_page', array('category_name' => 'computers')) . '</a><br />';
+
+    // want more performance? dump the routes as PHP or Apache rewrite rules:
+    $php_dumper = new PhpMatcherDumper($routes);
+    $apache_dumper = new ApacheMatcherDumper($routes);
+
+    $content .= "Routes as a PHP class: <pre>" . highlight_string($php_dumper->dump(), true) . "</pre><br />";
+    $content .= "Routes as Apache rewrite rules: <pre>" . $apache_dumper->dump() . "</pre><br />";
 
     $response = new Response($content);
     $response->send();
