@@ -73,5 +73,47 @@ With the *Request* class we have the total control of the HTTP messages. We can 
 	
 	// output the response
 	$response->send();
-	 
+	
+## Routing
+
+### Purpose 
+
+Helps to generate SEO-friendly URLs (/category/books), parse them and return the appropriate response based on the information provided in the URL.
+
+### Use Case
+
+Let's create a route that describes the /category/books URL, accounts for a case when no category name is provided and returns the appropreate page when category name is correct:
+
+	// init the namespaces
+	use Symfony\Component\HttpFoundation\Request;
+	use Symofony\Component\Routing\RouteCollection;
+	use Symfony\Component\Routing\Route;
+	use Symfony\Component\Routing\RequestContext;
+	use Symfony\Component\Routing\Matcher\UrlMatcher;
+	
+	// create the RouteCollection - an object for configuring our routes
+	$routes = new RouteCollection;
+	
+	// and add the route to the collection
+	// first param 		- route name
+	// second param 	- route URL
+	// thirs param		- default value
+	$routes->add('category_page', new Route('/category/{category_name}', array('category_name' => 'default')));
+	
+	// init the request
+	$request = Request::createFromGlobals();
+	
+	// create the context we are in from the request
+	$context = new RequestContext();
+	$context->fromRequest($request);
+	
+	// init the UrlMatcher from this context
+	$matcher = new UrlMatcher($routes, $context);
+	
+	// get the dynamic attributes from URL
+	$attributes = $matcher->match($request->getPathInfo());
+	
+	print_r($attributes);
+	
+	
 	
