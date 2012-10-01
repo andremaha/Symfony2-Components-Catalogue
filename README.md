@@ -115,5 +115,68 @@ Let's create a route that describes the /category/books URL, accounts for a case
 	
 	print_r($attributes);
 	
+### Creating the Controller using Routing
+
+One of the most useful features of the Routing components is the possibility to create a contoller. The controller is the central part of every MVC-architecture and it's mission is to generate a Response based on the data provided in the Request. In the web, such information is stored in URL, making Routing the logical place to store how this iformation is to be handled.
+
+To illustrate this technique we'll build a tiny app that will convert miles to kilometers using the clean and sexy URL: /convert/miles2km/{miles}.
+
+First off we need to make sure we initilize the autoloader and declare all the namspaces we'll be using. I find it convenient to declare all the  classes I am going to use in the script right at the top. It is even more useful for Symfony2 Components, since, as you might notice, there are bunch of them:
+
+	// Load the autoloader
+	require_once __DIR__ . '/../vendor/autoload.php';
+
+	// init namespaces
+	use Symfony\Component\Routing\RouteCollection;
+	use Symfony\Component\Routing\Route;
+	use Symfony\Component\HttpFoundation\Response;
+	use Symfony\Component\HttpFoundation\Request;
+	use Symfony\Component\Routing\RequestContext;
+	use Symfony\Component\Routing\Matcher\UrlMatcher;
+	use Symfony\Component\Routing\Exception\ResourceNotFoundException;
+
+Next we need to make a use of route collection and add the rule to it. As mentioned before the *add* method has two parameters. The second is the *Route* class which constructor in turn takes two parameters as well. The first parameter describes the URL scheme, the second - an array - with the default values. Besides the default values you can assign one special key to this array - *_controller* - which is any valid function callback. In our case we're going to use the simplistic anonymous function to make the calculations:
+
+	// init collection of routes
+	$routes = new RouteCollection();
+
+	// add miles2km route
+	$routes->add('miles2km', new Route('/convert/miles2km/{miles}', array(
+   		'miles' => 1,
+    	'_controller' => function($request) {
+        	$miles = (int) $request->attributes->get('miles');
+
+       		if (!is_numeric($miles)) {
+            	$response = new Response('Miles should be a number', 500);
+            	return $response;
+        	}
+        	$km = $miles * 1.6;
+        	$response = new Response("$miles mile(s) is $km kilometer(s)");
+        	return $response;
+    	})));
+
+The rest of the script forms the request context and UrlMatcher and was covered above in the Use Case section:
+
+	// init request
+	$request = Request::createFromGlobals();
+
+	// init context and matcher
+	$context = new RequestContext;
+	$context->fromRequest($request);
+	$matcher = new UrlMatcher($routes, $context);
+
+Now we need somehow tell our application to use the controller we've provided in the Route. To do that we'll manipulate the request and add an extra attribute. That is the advantage of using HttpFoundation Component right here - we can literly change the request on the fly to cary the information we need thoughout its exection:
 	
+	try {
+    	$request->attributes->add($matcher->match($request->getPathInfo()));
+    	$response = call_user_func($request->attributes->get('_controller'), $request);
+	} catch (ResourceNotFoundException $e) {
+    	$response = new Response('Not Found! You most likely forgot to add /convert/miles2km/{number} to your URL', 400);
+	} catch (\Exception $e) {
+    	$response = new Response('You broke everything! Why would you go and do that?', 500);
+	}
+
+	$response->send();	
+	
+And so our simple controller is done. Make sure to look in the HttpKernel Section to learn how to refactor the contoller we've just created from the function into the method call of an object. 
 	
