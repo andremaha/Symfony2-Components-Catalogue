@@ -11,6 +11,7 @@ Includes 2 key components to make interactions over HTTP in object-oriented fash
 	
 ### Use Case
 
+```php
 	// init the namespaces
 	use Symfony\Component\HttpFoundation\Request;
 	use Symonfy\Component\HttpFoundation\Response;
@@ -26,7 +27,7 @@ Includes 2 key components to make interactions over HTTP in object-oriented fash
 	
 	// output the response
 	$response->send();
-	
+``` 
 ### Options
 
 With the *Request* class we have the total control of the HTTP messages. We can get the global variables or Server variables, cookie values and even HTTP request headers:
