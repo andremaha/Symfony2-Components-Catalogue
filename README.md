@@ -193,7 +193,7 @@ And so our simple controller is done. Make sure to look in the HttpKernel Sectio
 ### Purpose
 
 The main purpose of the *HttpKernel* component is to standardize the way requests are handled and responses are being sent back. *HttpKernel* solves this problem mainly by introducing the *ControllerResolverInterface*. 
-As it was shown in the "Creating the Controller using Routing" section, one can easily define the application logic that will deal with each request. You do this by providing the '_controller' key with any valid PHP callback. So we can rewrite our previous controller example converting the controller to a class, instead of using the anonymous function:
+As it was shown in the "Creating the Controller using Routing" section, one can easily define the application logic that will deal with each request. You do this by providing the '_controller' request attribute with any valid PHP callback. So we can rewrite our previous controller example converting the controller to a class, instead of using the anonymous function:
 
 ```php
 // define the controller class
@@ -245,7 +245,7 @@ $arguments = $resolver->getArguments($request, $controller);
 $response = call_user_func_array($controller, $arguments);
 ```
 
-*ControllerResulver* handles the arguments, so we can adjust our controller class not no use request attributes anymore - $request->attributes->get('miles') - but rather rely on the convention and use the arguments' names provided by the routing:
+Another very useful feature of the *ControllerResolver* is how it translates argument names provided in the Routing (/convert/miles2km/{miles}) into the variables ($miles) that could be directly used in the controller's methods:
 
 ```php
 // define the controller class
