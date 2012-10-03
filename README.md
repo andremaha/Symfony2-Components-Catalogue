@@ -187,4 +187,80 @@ Now we need somehow tell our application to use the controller we've provided in
 	$response->send();	
 ```
 And so our simple controller is done. Make sure to look in the HttpKernel Section to learn how to refactor the contoller we've just created from the function into the method call of an object. 
-	
+
+## HttpKernel
+
+### Purpose
+
+The main purpose of the *HttpKernel* component is to standardize the way requests are handled and responses are being sent back. *HttpKernel* solves this problem mainly by introducing the *ControllerResolverInterface*. 
+As it was shown in the "Creating the Controller using Routing" section, one can easily define the application logic that will deal with each request. You do this by providing the '_controller' key with any valid PHP callback. So we can rewrite our previous controller example converting the controller to a class, instead of using the anonymous function:
+
+```php
+// define the controller class
+class ConverterController
+{
+    // main convertion logic goes in this method
+    public function miles2kmAction($request) {
+        $miles = $request->attributes->get('miles');
+
+        if (!is_numeric($miles)) {
+            $response = new Response('Miles should be a number', 500);
+            return $response;
+        }
+        $km = $miles * 1.6;
+        $response = new Response("$miles mile(s) is $km kilometer(s)");
+        return $response;
+    }
+}
+
+// now call the method miles2km when visiting URL /convert/miles2km 
+$routes->add('miles2km', new Route('/convert/miles2km/{miles}', array(
+   		'miles' => 1,
+    	'_controller' => array(new ConverterController(), 'miles2kmAction')
+)));
+```
+
+It *seems* to be a much nicer code, but we've now introduced the performace problem - the *ConvertController* class will be instantiated for every request, even when the URL would not match the provided Route. 
+That is where *ControllerResolverInterface* comes in and helps lazy-load the controller class only when it's needed, and even handles the dynamical arguments. 
+
+### Use Case
+
+Let's refactor our code so it will take advantage of the lazy-loading provided by the *ControllerResolverInterface*. We've talked about how the '_controller' request attribute needs to be defined with any valid PHP callback. *ControllerResolverInterface* lets us use the shorthand by following the string notation: "ClassName::MethodName":
+
+```php
+$routes->add('miles2km', new Route('/convert/miles2km/{miles}', array(
+   		'miles' => 1,
+    	'_controller' => 'ConverterController::miles2kmAction'
+)));
+```
+
+Now all we have to do is to instantiate the *ControllerResolver* class and call two of it's methods: *getController()* and *getArguments()* which will do exactly what their names suggest: get the contoller to execute and the arguments to pass to the controller's method:
+
+```php
+$resolver = new ControllerResolver();
+
+$controller = $resolver->getController($request);
+$arguments = $resolver->getArguments($request, $controller);
+
+$response = call_user_func_array($controller, $arguments);
+```
+
+*ControllerResulver* handles the arguments, so we can adjust our controller class not no use request attributes anymore - $request->attributes->get('miles') - but rather rely on the convention and use the arguments' names provided by the routing:
+
+```php
+// define the controller class
+class ConverterController
+{
+    // main convertion logic goes in this method
+    // getArguments() will magically convert the name of the dynamic URL argument into a variable - so we can use $miles
+    public function miles2kmAction($miles) {
+             if (!is_numeric($miles)) {
+            $response = new Response('Miles should be a number', 500);
+            return $response;
+        }
+        $km = $miles * 1.6;
+        $response = new Response("$miles mile(s) is $km kilometer(s)");
+        return $response;
+    }
+}
+```
